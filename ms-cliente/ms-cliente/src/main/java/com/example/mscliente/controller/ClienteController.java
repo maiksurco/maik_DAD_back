@@ -2,6 +2,7 @@ package com.example.mscliente.controller;
 
 import com.example.mscliente.entity.Cliente;
 import com.example.mscliente.service.ClienteService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,14 +30,22 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.actualizar(cliente));
     }
 
-    @GetMapping("/{id}")
+
+    @CircuitBreaker(name = "pedidoListarPorIdCB", fallbackMethod = "fallBackPedidoListarPorIdCB")    @GetMapping("/{id}")
     public ResponseEntity<Cliente> listById(@PathVariable(required = true) Integer id) {
         return ResponseEntity.ok().body(clienteService.listarPorId(id).get());
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<List<Cliente>> deleteById(@PathVariable(required = true) Integer id) {
         clienteService.eliminarPorId(id);
         return ResponseEntity.ok(clienteService.listar());
+    }
+
+    private ResponseEntity<Cliente> fallBackPedidoListarPorIdCB(@PathVariable(required = true) Integer id, RuntimeException e) {
+        Cliente pedido = new Cliente();
+        pedido.setId(90000);
+        return ResponseEntity.ok().body(pedido);
     }
 }
